@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Term Deposit Predictor</title>
+<style>
+:root{--paper:#f3f6f4;--ink:#12302a;--muted:#5d7770;--line:#c9d6d0;--accent:#0b6e4f;--no:#a63d2f;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 Georgia,"Times New Roman",serif;background:var(--paper);color:var(--ink)}
+main{max-width:720px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:2rem;line-height:1.15;margin:0 0 6px}
+p.lead{color:var(--muted);margin:0 0 24px}
+form{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px;display:grid;gap:14px;grid-template-columns:1fr 1fr}
+.f{display:flex;flex-direction:column;gap:4px}
+.f.wide{grid-column:1/-1}
+label{font:600 .85rem system-ui,sans-serif}
+input,select{font:inherit;padding:9px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink)}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.f ul{list-style:none;margin:0;padding:0;display:flex;gap:16px}
+.f ul label{font-weight:400}
+.err{color:var(--no);font:.8rem system-ui}
+button{grid-column:1/-1;font:600 1rem system-ui,sans-serif;padding:12px;border:0;border-radius:4px;background:var(--accent);color:#fff;cursor:pointer}
+.result{margin:24px 0;padding:22px;border-radius:6px;border:2px solid;background:var(--card)}
+.result.yes{border-color:var(--accent)}.result.no{border-color:var(--no)}
+.result b{font-size:1.7rem;display:block}
+.result.yes b{color:var(--accent)}.result.no b{color:var(--no)}
+.bar{height:8px;background:var(--line);border-radius:4px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+table{width:100%;border-collapse:collapse;font:.85rem system-ui;margin-top:8px}
+td,th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+h2{font-size:1.1rem;margin:34px 0 0}
+small{color:var(--muted);font-family:system-ui}
+@media(max-width:560px){form{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>Will this customer open a term deposit?</h1>
+<p class="lead">Enter the customer's details. A trained model estimates the chance they subscribe.</p>
+
+{% if result %}
+<section class="result {% if result.will %}yes{% else %}no{% endif %}" aria-live="polite">
+  <b>{% if result.will %}Likely to subscribe{% else %}Unlikely to subscribe{% endif %}</b>
+  Subscription probability: {{ result.percent }}%
+  <div class="bar"><i style="width:{{ result.percent }}%"></i></div>
+</section>
+{% endif %}
+
+<form method="post">{% csrf_token %}
+  {% for field in form %}
+  <div class="f {% if field.name == 'poutcome' or field.name == 'pdays' %}wide{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% for e in field.errors %}<span class="err">{{ e }}</span>{% endfor %}
+  </div>
+  {% endfor %}
+  <button type="submit">Predict subscription</button>
+</form>
+
+{% if history %}
+<h2>Recent predictions</h2>
+<table>
+<tr><th>Age</th><th>Job</th><th>Balance</th><th>Result</th><th>Prob.</th></tr>
+{% for p in history %}
+<tr><td>{{ p.age }}</td><td>{{ p.job }}</td><td>{{ p.balance }}</td>
+<td>{% if p.will_subscribe %}Subscribe{% else %}Don't subscribe{% endif %}</td>
+<td>{% widthratio p.probability 1 100 %}%</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if accuracy %}<p><small>Model accuracy on held-out test data: {{ accuracy }}</small></p>{% endif %}
+</main>
+</body>
+</html>
